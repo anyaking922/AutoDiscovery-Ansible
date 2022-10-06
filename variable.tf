@@ -1,5 +1,5 @@
 variable "ami" {
-  default = "ami-0f0f1c02e5e4d9d9f"
+  default     = "ami-0f0f1c02e5e4d9d9f"
   description = "ami for ec2"
 }
 
@@ -55,12 +55,12 @@ variable "instance_type" {
   default = "t2.medium"
 }
 
-variable "database_username"{
-  default ="pacdb"
+variable "database_username" {
+  default = "pacdb"
 }
 
-variable "db_password"{
-  default ="Admin123"
+variable "db_password" {
+  default = "Admin123"
 }
 
 

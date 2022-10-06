@@ -1,244 +1,244 @@
 # VPC
-resource "aws_vpc"        "PACD_VPC" {
-  cidr_block              = "10.0.0.0/16"
+resource "aws_vpc" "PACD_VPC" {
+  cidr_block = "10.0.0.0/16"
   tags = {
-    Name                  = "PACD_VPC"
+    Name = "PACD_VPC"
   }
 }
 
 # PUBLIC SUBNET 1
-resource "aws_subnet"     "PACD_PubSN1" {
-  vpc_id                  = aws_vpc.PACD_VPC.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "eu-west-1a"
+resource "aws_subnet" "PACD_PubSN1" {
+  vpc_id            = aws_vpc.PACD_VPC.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "eu-west-1a"
 
   tags = {
-    Name                  = "PACD_PubSN1"
+    Name = "PACD_PubSN1"
   }
 }
 
 # PUBLIC SUBNET 2
-resource "aws_subnet"     "PACD_PubSN2" {
-  vpc_id                  = aws_vpc.PACD_VPC.id
-  cidr_block              = "10.0.2.0/24"
-  availability_zone       = "eu-west-1b"
+resource "aws_subnet" "PACD_PubSN2" {
+  vpc_id            = aws_vpc.PACD_VPC.id
+  cidr_block        = "10.0.2.0/24"
+  availability_zone = "eu-west-1b"
 
   tags = {
-    Name                  = "PACD_PubSN2"
+    Name = "PACD_PubSN2"
   }
 }
 
 # PRIVATE SUBNET 1
-resource "aws_subnet"   "PACD_PvtSN1" {
-  vpc_id                = aws_vpc.PACD_VPC.id
-  cidr_block            = "10.0.3.0/24"
-  availability_zone     = "eu-west-1a"
+resource "aws_subnet" "PACD_PvtSN1" {
+  vpc_id            = aws_vpc.PACD_VPC.id
+  cidr_block        = "10.0.3.0/24"
+  availability_zone = "eu-west-1a"
 
   tags = {
-    Name                = "PACD_PvtSN1"
+    Name = "PACD_PvtSN1"
   }
 }
 
 # PRIVATE SUBNET 2
-resource "aws_subnet"   "PACD_PvtSN2" {
-  vpc_id                = aws_vpc.PACD_VPC.id
-  cidr_block            = "10.0.4.0/24"
-  availability_zone     = "eu-west-1b"
+resource "aws_subnet" "PACD_PvtSN2" {
+  vpc_id            = aws_vpc.PACD_VPC.id
+  cidr_block        = "10.0.4.0/24"
+  availability_zone = "eu-west-1b"
 
   tags = {
-    Name                = "PACD_PvtSN2"
+    Name = "PACD_PvtSN2"
   }
 }
 
 
 # INTERNET GATEWAY (IGW)
 resource "aws_internet_gateway" "PACD_IGW" {
-  vpc_id                = aws_vpc.PACD_VPC.id
+  vpc_id = aws_vpc.PACD_VPC.id
   tags = {
-    Name                = "PACD_IGW"
+    Name = "PACD_IGW"
   }
 }
 
 # NAT GATEWAY
 resource "aws_nat_gateway" "PACD_NAT-GW" {
-  allocation_id         = aws_eip.PACD_EIP.id
-  subnet_id             = aws_subnet.PACD_PubSN1.id
+  allocation_id = aws_eip.PACD_EIP.id
+  subnet_id     = aws_subnet.PACD_PubSN1.id
 
   tags = {
-    Name                = "PACD_NAT-GW"
+    Name = "PACD_NAT-GW"
   }
-  
-  depends_on            = [aws_internet_gateway.PACD_IGW]
+
+  depends_on = [aws_internet_gateway.PACD_IGW]
 }
 
 # ELASTIC IP
-resource "aws_eip"      "PACD_EIP" {
-  vpc                   = true
+resource "aws_eip" "PACD_EIP" {
+  vpc = true
 
   tags = {
-    Name                = "PACD_EIP"
+    Name = "PACD_EIP"
   }
 }
- 
+
 # ROUTE TABLE FOR PUBLIC SUBNET
 resource "aws_route_table" "PACD_RT_Pub" {
-  vpc_id               = aws_vpc.PACD_VPC.id
+  vpc_id = aws_vpc.PACD_VPC.id
   route {
-    cidr_block         = "0.0.0.0/0"
-    gateway_id         = aws_internet_gateway.PACD_IGW.id
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.PACD_IGW.id
   }
 
   tags = {
-    Name               = "PACD_RT_Pub"
+    Name = "PACD_RT_Pub"
   }
 }
 
 # ROUTE TABLE ASSOCIATIONS FOR PUBLIC SUBNET 1
 resource "aws_route_table_association" "PACD_RT_Pub_Ass1" {
-  subnet_id             = aws_subnet.PACD_PubSN1.id
-  route_table_id        = aws_route_table.PACD_RT_Pub.id
+  subnet_id      = aws_subnet.PACD_PubSN1.id
+  route_table_id = aws_route_table.PACD_RT_Pub.id
 }
 
 # ROUTE TABLE ASSOCIATIONS FOR PUBLIC SUBNET 2
 resource "aws_route_table_association" "PACD_RT_Pub_Ass2" {
-  subnet_id             = aws_subnet.PACD_PubSN2.id
-  route_table_id        = aws_route_table.PACD_RT_Pub.id
+  subnet_id      = aws_subnet.PACD_PubSN2.id
+  route_table_id = aws_route_table.PACD_RT_Pub.id
 }
 
 
 # ROUTE TABLE FOR PRIVATE SUBNET
 resource "aws_route_table" "PACD_RT_Pvt" {
-  vpc_id                = aws_vpc.PACD_VPC.id
+  vpc_id = aws_vpc.PACD_VPC.id
   route {
-    cidr_block          = "0.0.0.0/0"
-    nat_gateway_id      = aws_nat_gateway.PACD_NAT-GW.id
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.PACD_NAT-GW.id
   }
 
   tags = {
-    Name               = "PACD_RT_Pvt"
+    Name = "PACD_RT_Pvt"
   }
 }
 
 # ROUTE TABLE ASSOCIATIONS FOR PRIVATE SUBNET 1
 resource "aws_route_table_association" "PACD_RT_Pvt_Ass1" {
-  subnet_id             = aws_subnet.PACD_PvtSN1.id
-  route_table_id        = aws_route_table.PACD_RT_Pvt.id
+  subnet_id      = aws_subnet.PACD_PvtSN1.id
+  route_table_id = aws_route_table.PACD_RT_Pvt.id
 }
 
 # ROUTE TABLE ASSOCIATIONS FOR PRIVATE SUBNET 2
 resource "aws_route_table_association" "PACD_RT_Pvt2_Ass2" {
-  subnet_id             = aws_subnet.PACD_PvtSN2.id
-  route_table_id        = aws_route_table.PACD_RT_Pvt.id
+  subnet_id      = aws_subnet.PACD_PvtSN2.id
+  route_table_id = aws_route_table.PACD_RT_Pvt.id
 }
 
 # JENKINS SECURITY GROUP
 resource "aws_security_group" "Jenkins_SG" {
-  name                  = "Jenkins_SG"
-  description           = "Allow 8080, ssh traffic"
-  vpc_id                = aws_vpc.PACD_VPC.id
+  name        = "Jenkins_SG"
+  description = "Allow 8080, ssh traffic"
+  vpc_id      = aws_vpc.PACD_VPC.id
 
   ingress {
-    description         = "TLS from VPC"
-    from_port           = var.port_http
-    to_port             = var.port_http
-    protocol            = "tcp"
-    cidr_blocks         = ["0.0.0.0/0"]
+    description = "TLS from VPC"
+    from_port   = var.port_http
+    to_port     = var.port_http
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description         = "TLS from VPC"
-    from_port           = var.port_proxy
-    to_port             = var.port_proxy
-    protocol            = "tcp"
-    cidr_blocks         = ["0.0.0.0/0"]
+    description = "TLS from VPC"
+    from_port   = var.port_proxy
+    to_port     = var.port_proxy
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-    ingress {
-    description         = "TLS from VPC"
-    from_port           = var.port_ssh
-    to_port             = var.port_ssh
-    protocol            = "tcp"
-    cidr_blocks         = ["0.0.0.0/0"]
+  ingress {
+    description = "TLS from VPC"
+    from_port   = var.port_ssh
+    to_port     = var.port_ssh
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port           = var.egress
-    to_port             = var.egress
-    protocol            = "-1"
-    cidr_blocks         = ["0.0.0.0/0"]
+    from_port   = var.egress
+    to_port     = var.egress
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Name                = "Jenkins_SG"
+    Name = "Jenkins_SG"
   }
 }
 
 # DOCKER SECURITY GROUP
 resource "aws_security_group" "Docker_SG" {
-  name                  = "Docker_SG"
-  description           = "Allow 8080, ssh traffic"
-  vpc_id                = aws_vpc.PACD_VPC.id
+  name        = "Docker_SG"
+  description = "Allow 8080, ssh traffic"
+  vpc_id      = aws_vpc.PACD_VPC.id
 
   ingress {
-    description         = "TLS from VPC"
-    from_port           = var.port_http
-    to_port             = var.port_http
-    protocol            = "tcp"
-    cidr_blocks         = ["0.0.0.0/0"]
+    description = "TLS from VPC"
+    from_port   = var.port_http
+    to_port     = var.port_http
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description         = "TLS from VPC"
-    from_port           = var.port_proxy
-    to_port             = var.port_proxy
-    protocol            = "tcp"
-    cidr_blocks         = ["0.0.0.0/0"]
+    description = "TLS from VPC"
+    from_port   = var.port_proxy
+    to_port     = var.port_proxy
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-    ingress {
-    description         = "TLS from VPC"
-    from_port           = var.port_ssh
-    to_port             = var.port_ssh
-    protocol            = "tcp"
-    cidr_blocks         = ["0.0.0.0/0"]
+  ingress {
+    description = "TLS from VPC"
+    from_port   = var.port_ssh
+    to_port     = var.port_ssh
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port           = var.egress
-    to_port             = var.egress
-    protocol            = "-1"
-    cidr_blocks         = ["0.0.0.0/0"]
+    from_port   = var.egress
+    to_port     = var.egress
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Name                = "Docker_SG"
+    Name = "Docker_SG"
   }
 }
 
 # ANSIBLE SECURITY GROUP
 resource "aws_security_group" "Ansible_SG" {
-  name                  = "Ansible_SG"
-  description           = "Allow TLS inbound traffic"
-  vpc_id                = aws_vpc.PACD_VPC.id
+  name        = "Ansible_SG"
+  description = "Allow TLS inbound traffic"
+  vpc_id      = aws_vpc.PACD_VPC.id
 
 
   ingress {
-    description         = "TLS from VPC"
-    from_port           = var.port_ssh
-    to_port             = var.port_ssh
-    protocol            = "tcp"
-    cidr_blocks         = ["0.0.0.0/0"]
+    description = "TLS from VPC"
+    from_port   = var.port_ssh
+    to_port     = var.port_ssh
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port           = var.egress
-    to_port             = var.egress
-    protocol            = "-1"
-    cidr_blocks         = ["0.0.0.0/0"]
+    from_port   = var.egress
+    to_port     = var.egress
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Name                = "Ansible_SG"
+    Name = "Ansible_SG"
   }
 }
 
@@ -275,43 +275,43 @@ resource "aws_security_group" "Sonar_SG" {
 
 # RDS SECURITY GROUP
 resource "aws_security_group" "Mysql_SG" {
-  name                  = "Mysql_SG"
-  description           = "Allow TLS inbound traffic"
-  vpc_id                = aws_vpc.PACD_VPC.id
+  name        = "Mysql_SG"
+  description = "Allow TLS inbound traffic"
+  vpc_id      = aws_vpc.PACD_VPC.id
 
   ingress {
-    description         = "TLS from VPC"
-    from_port           = var.port_mysql_database
-    to_port             = var.port_mysql_database
-    protocol            = "tcp"
-    cidr_blocks         = ["10.0.1.0/24", "10.0.2.0/24"]
+    description = "TLS from VPC"
+    from_port   = var.port_mysql_database
+    to_port     = var.port_mysql_database
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24"]
   }
 
   ingress {
-    description         = "TLS from VPC"
-    from_port           = var.port_ssh
-    to_port             = var.port_ssh
-    protocol            = "tcp"
-    cidr_blocks         = ["10.0.1.0/24", "10.0.2.0/24"]
+    description = "TLS from VPC"
+    from_port   = var.port_ssh
+    to_port     = var.port_ssh
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24"]
   }
 
   egress {
-    from_port           = var.egress
-    to_port             = var.egress
-    protocol            = "-1"
-    cidr_blocks         = ["0.0.0.0/0"]
+    from_port   = var.egress
+    to_port     = var.egress
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
 
   }
 
   tags = {
-    Name                = "Mysql_SG"
+    Name = "Mysql_SG"
   }
 }
 
 # create KeyPair
 resource "aws_key_pair" "server_key" {
-  key_name   = "server_key" 
-  public_key = file(var.server_key) 
+  key_name   = "server_key"
+  public_key = file(var.server_key)
 }
 
 #create database subnet group
@@ -334,7 +334,7 @@ resource "aws_db_instance" "pacd_rds" {
   instance_class         = "db.t2.micro"
   port                   = "3306"
   db_name                = "pacdb"
-  username               = var.database_username 
+  username               = var.database_username
   password               = var.db_password
   multi_az               = true
   parameter_group_name   = "default.mysql8.0"
@@ -345,19 +345,15 @@ resource "aws_db_instance" "pacd_rds" {
 }
 
 
-
-
-
-
 # JENKINS SERVER
-resource "aws_instance"       "PACD_Jenkins_Host" {
-  ami                             = var.ami
-  instance_type                   = var.instance_type
-  subnet_id                       = aws_subnet.PACD_PubSN1.id
-  vpc_security_group_ids          = [aws_security_group.Jenkins_SG.id]
-  key_name                        = aws_key_pair.server_key.id
-  associate_public_ip_address     = true
-  user_data = <<-EOF
+resource "aws_instance" "PACD_Jenkins_Host" {
+  ami                         = var.ami
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.PACD_PubSN1.id
+  vpc_security_group_ids      = [aws_security_group.Jenkins_SG.id]
+  key_name                    = aws_key_pair.server_key.id
+  associate_public_ip_address = true
+  user_data                   = <<-EOF
 #!/bin/bash
 sudo yum update –y
 sudo yum upgrade -y
@@ -383,9 +379,9 @@ sudo usermod -aG docker ec2-user
 sudo service sshd restart
 sudo hostnamectl set-hostname Jenkins
 EOF
-    tags = {
-        Name = "PACD_Jenkins_Host"
-    }
+  tags = {
+    Name = "PACD_Jenkins_Host"
+  }
 }
 
 
@@ -393,7 +389,7 @@ EOF
 
 
 # DOCKER SERVER
-resource "aws_instance"       "PACD_Docker_Host"{
+resource "aws_instance" "PACD_Docker_Host" {
   ami                         = var.ami
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.PACD_PubSN1.id
@@ -401,7 +397,7 @@ resource "aws_instance"       "PACD_Docker_Host"{
   key_name                    = aws_key_pair.server_key.id
   associate_public_ip_address = true
 
-user_data = <<-EOF
+  user_data = <<-EOF
 #!/bin/bash
 sudo yum update -y
 sudo yum upgrade -y
@@ -423,18 +419,18 @@ sudo chmod 600 .ssh/authorized_keys
 echo "${file(var.server_key)}" >> /home/ec2-user/.ssh/authorized_keys 
 sudo hostnamectl set-hostname Docker
 EOF
- tags = {
+  tags = {
     Name = "PACD_Docker_Host"
   }
 }
 data "aws_instance" "PACD_Docker_Host" {
-   filter {
-       name = "tag:Name"
-       values =["PACD_Docker_Host"]
-   }
-   depends_on = [
-       aws_instance.PACD_Docker_Host
-   ]
+  filter {
+    name   = "tag:Name"
+    values = ["PACD_Docker_Host"]
+  }
+  depends_on = [
+    aws_instance.PACD_Docker_Host
+  ]
 }
 
 
@@ -443,14 +439,14 @@ data "aws_instance" "PACD_Docker_Host" {
 
 
 #Create Ansible Host
- resource "aws_instance" "PACD_Ansible_Host" {
+resource "aws_instance" "PACD_Ansible_Host" {
   ami                         = var.ami
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.PACD_PubSN1.id
   vpc_security_group_ids      = [aws_security_group.Ansible_SG.id]
   key_name                    = aws_key_pair.server_key.id
   associate_public_ip_address = true
-  user_data = <<-EOF
+  user_data                   = <<-EOF
 #!/bin/bash
 sudo yum update -y
 sudo yum upgrade -y
@@ -579,18 +575,18 @@ EOF
   tags = {
     Name = "PACD_Ansible_Host"
   }
- }
+}
 
 
- # SonarQube Server
+# SonarQube Server
 resource "aws_instance" "Sonarqube_Server" {
-  ami                    = var.sonar_ami
-  instance_type          = var.instance_type
-  key_name               = aws_key_pair.server_key.id
-  subnet_id              = aws_subnet.PACD_PubSN1.id
-  vpc_security_group_ids = [aws_security_group.Sonar_SG.id]
+  ami                         = var.sonar_ami
+  instance_type               = var.instance_type
+  key_name                    = aws_key_pair.server_key.id
+  subnet_id                   = aws_subnet.PACD_PubSN1.id
+  vpc_security_group_ids      = [aws_security_group.Sonar_SG.id]
   associate_public_ip_address = true
-  user_data              = <<-EOF
+  user_data                   = <<-EOF
 #!/bin/bash
   sudo apt update -y
   
@@ -734,4 +730,133 @@ resource "aws_instance" "Sonarqube_Server" {
   sudo hostnamectl set-hostname Sonarqube
   sudo reboot
   EOF
+}
+
+
+
+
+
+
+
+
+
+
+#Create AMI from EC2 Instance
+resource "aws_ami_from_instance" "PACD_ami" {
+  name               = "PACD_ami"
+  source_instance_id = aws_instance.PACD_Docker_Host.id
+}
+
+
+
+
+####High Availability, ASG, LB#######
+
+
+#Add High Availability
+
+#Create Target Group
+resource "aws_lb_target_group" "PACD_tg" {
+  name     = "PACD-TG"
+  port     = 8080
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.PACD_VPC.id
+  health_check {
+    path                = "/"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 5
+    interval            = 15
+    matcher             = "200"
+  }
+}
+
+
+#Create Application Load Balancer
+resource "aws_lb" "PACD_lb" {
+  name               = "PACD-Lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = ["${aws_security_group.Jenkins_SG.id}"]
+  subnets            = ["${aws_subnet.PACD_PubSN1.id}", "${aws_subnet.PACD_PubSN2.id}"]
+
+  enable_deletion_protection = false
+
+  tags = {
+    Name = "PACD-Lb"
+  }
+}
+
+# Create Load Balancer Listener
+resource "aws_lb_listener" "pacd_lb" {
+  load_balancer_arn = aws_lb.PACD_lb.arn
+  port              = "80"
+  protocol          = "HTTP"
+  default_action {
+    target_group_arn = aws_lb_target_group.PACD_tg.arn
+    type             = "forward"
+  }
+}
+
+#Create Launch Configuration
+resource "aws_launch_configuration" "PACD_lc" {
+  name_prefix                 = "PACD_lc"
+  image_id                    = aws_ami_from_instance.PACD_ami.id
+  instance_type               = "t2.medium"
+  associate_public_ip_address = true
+  security_groups             = ["${aws_security_group.Jenkins_SG.id}"]
+  key_name                    = "server_key"
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+
+#Create Auto Scaling group
+resource "aws_autoscaling_group" "PACD_asg" {
+  name                 = "PACD-ASG"
+  launch_configuration = aws_launch_configuration.PACD_lc.name
+  #Defines the vpc, az and subnets to launch in
+  vpc_zone_identifier       = ["${aws_subnet.PACD_PubSN1.id}", "${aws_subnet.PACD_PubSN2.id}"]
+  target_group_arns         = ["${aws_lb_target_group.PACD_tg.arn}"]
+  health_check_type         = "EC2"
+  health_check_grace_period = 30
+  desired_capacity          = 2
+  max_size                  = 4
+  min_size                  = 2
+  force_delete              = true
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+
+
+
+resource "aws_autoscaling_policy" "PACD_asg_policy" {
+  name                   = "PACD_asg_policy"
+  policy_type            = "TargetTrackingScaling"
+  autoscaling_group_name = aws_autoscaling_group.PACD_asg.name
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 60.0
+  }
+}
+
+#Create Hosted Zone
+resource "aws_route53_zone" "PACD_hosted_zone" {
+  name = "kingsleyA.com"
+}
+
+resource "aws_route53_record" "PACD_record" {
+  zone_id = aws_route53_zone.PACD_hosted_zone.zone_id
+  name    = ""
+  type    = "A"
+  alias {
+    name                   = aws_lb.PACD_lb.dns_name
+    zone_id                = aws_lb.PACD_lb.zone_id
+    evaluate_target_health = true
+  }
 }
