@@ -597,7 +597,6 @@ resource "aws_instance" "Sonarqube_Server" {
   fs.file-max=65536
   ulimit -n 65536
   ulimit -u 4096" >> /etc/sysctl.conf'
-
   sudo bash -c 'echo "
   sonarqube   -   nofile   65536
   sonarqube   -   nproc    4096" >> /etc/security/limits.conf'
@@ -609,7 +608,6 @@ resource "aws_instance" "Sonarqube_Server" {
   wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
   sudo apt-get update -y
   sudo apt-get -y install postgresql-12 postgresql-contrib-12
-
   echo "*****Enable and start, so it starts when system boots up*******"
   sudo systemctl enable postgresql
   sudo systemctl start postgresql
