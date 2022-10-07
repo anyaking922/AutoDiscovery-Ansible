@@ -15,3 +15,10 @@ output "AnsibleIP" {
 output "SonarIP" {
   value = aws_instance.Sonarqube_Server.public_ip
 }
+
+
+
+
+
+
+
