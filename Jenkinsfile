@@ -6,9 +6,7 @@ pipeline {
   stages {
     stage('Pull Source Code from GitHub') {
       steps {
-        git branch: 'main',
-        credentialsId: 'git-credentials: 'gitcred',
-         url: 'https://github.com/anyaking922/PAC_W_S.git'
+        git branch: 'main', credentialsId: 'gitcred', url: 'https://github.com/anyaking922/PAC_W_S.git'
       }
     }
     stage('Code Analysis') {
