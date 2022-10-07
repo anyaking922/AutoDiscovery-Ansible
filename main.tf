@@ -601,10 +601,8 @@ resource "aws_instance" "Sonarqube_Server" {
   sudo bash -c 'echo "
   sonarqube   -   nofile   65536
   sonarqube   -   nproc    4096" >> /etc/security/limits.conf'
-
   echo "***********Install Java JDK***********"
   sudo apt install openjdk-11-jdk -y
-  
   echo "***********Install PostgreSQL***********"
   echo "***********The version of postgres currenlty is 14.5 which is not supported so we have to download v12***********"
   sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -652,8 +650,7 @@ resource "aws_instance" "Sonarqube_Server" {
   sonar.jdbc.password=Admin123
   sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
   sonar.search.javaOpts=-Xmx512m -Xms512m -XX:+HeapDumpOnOutOfMemoryError" >> /opt/sonarqube/conf/sonar.properties'
-
-  #Configure such that SonarQube starts on boot up
+oot up
   sudo touch /etc/systemd/system/sonarqube.service
 
   #Configuring so that we can run commands to start, stop and reload sonarqube service
