@@ -7,7 +7,7 @@ pipeline {
     stage('Pull Source Code from GitHub') {
       steps {
         git branch: 'main',
-        credentialsId: 'git-credentials: 'a4bbb2f8-40f7-4235-aba3-4a358baa8fea',
+        credentialsId: 'git-credentials: 'gitcred',
          url: 'https://github.com/anyaking922/PAC_W_S.git'
       }
     }
