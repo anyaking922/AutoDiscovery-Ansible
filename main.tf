@@ -716,21 +716,13 @@ resource "aws_instance" "Sonarqube_Server" {
   sudo systemctl stop nginx.service
   sudo systemctl start nginx.service
   
-  #Install New relic
-  echo "license_key: eu01xx806409169e75514e699c9629ee0b32NRAL" | sudo tee -a /etc/newrelic-infra.yml
-  sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
+ #Install New relic
+  curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=NRAK-IWFEY0G9C3Z9US5E18Y3VH0IOJQ NEW_RELIC_ACCOUNT_ID=3643903 NEW_RELIC_REGION=EU /usr/local/bin/newrelic install -y
   echo "****************Change Hostname(IP) to something readable**************"
   sudo hostnamectl set-hostname Sonarqube
   sudo reboot
   EOF
 }
-
-
-
-
-
-
-
 
 
 
