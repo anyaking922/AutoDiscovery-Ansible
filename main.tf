@@ -447,134 +447,65 @@ resource "aws_instance" "PACD_Ansible_Host" {
   key_name                    = aws_key_pair.server_key.id
   associate_public_ip_address = true
   user_data                   = <<-EOF
-#!/bin/bash
-sudo yum update -y
-sudo yum upgrade -y
-sudo yum install python3.8 -y
-sudo alternatives --set python /usr/bin/python3.8
-sudo yum -y install python3-pip
-sudo yum install ansible -y
-pip3 install ansible --user
-sudo chown ec2-user:ec2-user /etc/ansible
-echo "license_key: eu01xx806409169e75514e699c9629ee0b32NRAL" | sudo tee -a /etc/newrelic-infra.yml
-sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
-sudo yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
-sudo yum install newrelic-infra -y
-echo "PubkeyAcceptedKeyTypes=+ssh-rsa" >> /etc/ssh/sshd_config.d/10-insecure-rsa-keysig.conf
-sudo service sshd reload
-sudo bash -c ' echo "StrictHostKeyChecking No" >> /etc/ssh/ssh_config'
-echo "${file(var.server_priv_key)}" >> /home/ec2-user/.ssh/anskey_rsa
-echo "${file(var.server_key)}" >> /home/ec2-user/.ssh/anskey_rsa.pub
-sudo chmod -R 700 .ssh/
-sudo chown -R ec2-user:ec2-user .ssh/
-sudo yum install -y yum-utils
-sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-sudo yum install docker-ce -y
-sudo systemctl start docker
-sudo usermod -aG docker ec2-user
-cd /etc
-sudo chown ec2-user:ec2-user hosts
-cat <<EOT>> /etc/ansible/hosts
-localhost ansible_connection=local
-[docker_host]
-${data.aws_instance.PACD_Docker_Host.public_ip}  ansible_ssh_private_key_file=/home/ec2-user/.ssh/anskey_rsa
-EOT
-sudo mkdir /opt/docker
-sudo chown -R ec2-user:ec2-user /opt/docker
-sudo chmod -R 700 /opt/docker
-touch /opt/docker/Dockerfile
-cat <<EOT>> /opt/docker/Dockerfile
-# pull tomcat image from docker hub
-FROM tomcat
-FROM openjdk:8-jre-slim
-#copy war file on the container
-COPY spring-petclinic-2.4.2.war app/
-WORKDIR app/
-RUN pwd
-RUN ls -al
-ENTRYPOINT [ "java", "-jar", "spring-petclinic-2.4.2.war", "--server.port=8085"]
-EOT
-touch /opt/docker/docker-image.yml
-cat <<EOT>> /opt/docker/docker-image.yml
----
- - hosts: localhost
-  #root access to user
-   become: true
+  #!/bin/bash
+  sudo apt update -y
 
-   tasks:
-   - name: login to dockerhub
-     command: docker login -u cloudhight -p CloudHight_Admin123@
+  echo "*********Install Ansible********"
+  sudo apt install software-properties-common
+  sudo add-apt-repository --yes --update ppa:ansible/ansible
+  sudo apt update -y
+  sudo apt install ansible -y
 
-   - name: Create docker image from Pet Adoption war file
-     command: docker build -t pet-adoption-image .
-     args:
-       chdir: /opt/docker
+  echo "****************Copy the private key into the Server **************"
+  echo "****************Ansible would use this when connecting to the Docker Server **************"
+  echo "${file(var.pacpet1_prvkey_path)}" >> ${var.ans_prvkey_path}
 
-   - name: Add tag to image
-     command: docker tag pet-adoption-image cloudhight/pet-adoption-image
+  echo "*********This runs as the root and disables StrictHostChecking********"
+  sudo bash -c 'echo "StrictHostKeyChecking No" >> /etc/ssh/ssh_config'
 
-   - name: Push image to docker hub
-     command: docker push cloudhight/pet-adoption-image
+  echo "****Add the Docker Servers IP to the host file and also the localhost for ansible*******"
+  sudo bash -c 'echo "localhost ansible_connection=local
+  [Docker_Servers]
+  ${aws_instance.pacpet1_docker.public_ip} ansible_ssh_private_key_file=${var.ans_prvkey_path}" >> /etc/ansible/hosts'
 
-   - name: Remove docker image from Ansible node
-     command: docker rmi pet-adoption-image cloudhight/pet-adoption-image
-     ignore_errors: yes
-EOT
-touch /opt/docker/docker-container.yml
-cat <<EOT>> /opt/docker/docker-container.yml
----
- - hosts: docker_host
-   become: true
+  echo "*********Install Docker engine ********"
+  sudo apt-get install ca-certificates curl gnupg lsb-release -y
+  sudo mkdir -p /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  sudo apt update -y
+  sudo apt install docker-ce docker-ce-cli -y
 
-   tasks:
-   - name: login to dockerhub
-     command: docker login -u cloudhight -p CloudHight_Admin123@
+  echo "*******Create Docker File********"
+  cd /home/ubuntu/
+  mkdir Docker
+  echo "*******We change the owner of this directory to ubuntu because ansible********"
+  echo "*******would need to drop a file in this directory and it cant do that if its owned by root********"
+  sudo chown -R ubuntu:ubuntu Docker
+  touch Docker/Dockerfile
 
-   - name: Stop any container running
-     command: docker stop pet-adoption-container
-     ignore_errors: yes
+  #Insert Content to Docker File
+  echo "${file(var.docker_file_path)}" > Docker/Dockerfile
 
-   - name: Remove stopped container
-     command: docker rm pet-adoption-container
-     ignore_errors: yes
+  #Create Ansible Playbook that creates docker image
+  mkdir Ansible && touch Ansible/playbook-dockerimage.yaml
+  echo "${file(var.docker_image_path)}" > Ansible/playbook-dockerimage.yaml
+  
+  #Create Ansible Playbook that creates docker container
+  touch Ansible/playbook-container.yaml
+  echo "${file(var.docker_container_path)}" > Ansible/playbook-container.yaml
 
-   - name: Remove docker image
-     command: docker rmi cloudhight/pet-adoption-image
-     ignore_errors: yes
+  #Create Ansible Playbook that installs new relic infrastructure agent to monitor containers
+  touch Ansible/playbook-newrelic.yaml
+  echo "${file(var.newrelic_infra_path)}" > Ansible/playbook-newrelic.yaml
 
-   - name: Pull docker image from dockerhub
-     command: docker pull cloudhight/pet-adoption-image
-     ignore_errors: yes
-
-   - name: Create container from pet adoption image
-     command: docker run -it -d --name pet-adoption-container -p 8080:8085 cloudhight/pet-adoption-image
-     ignore_errors: yes
-EOT
-cat << EOT > /opt/docker/newrelic.yml
----
- - hosts: docker
-   become: true
-
-   tasks:
-   - name: install newrelic agent
-     command: docker run \
-                     -d \
-                     --name newrelic-infra \
-                     --network=host \
-                     --cap-add=SYS_PTRACE \
-                     --privileged \
-                     --pid=host \
-                     -v "/:/host:ro" \
-                     -v "/var/run/docker.sock:/var/run/docker.sock" \
-                     -e NRIA_LICENSE_KEY=eu01xx806409169e75514e699c9629ee0b32NRAL \
-                     newrelic/infrastructure:latest
-EOT
-sudo hostnamectl set-hostname Ansible
-EOF
-
-  tags = {
-    Name = "PACD_Ansible_Host"
-  }
+  #Install New relic
+ curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=NRAK-IWFEY0G9C3Z9US5E18Y3VH0IOJQ NEW_RELIC_ACCOUNT_ID=3643903 NEW_RELIC_REGION=EU /usr/local/bin/newrelic install -y
+ 
+  echo "****************Change Hostname(IP) to something readable**************"
+  sudo hostnamectl set-hostname Ansible
+  sudo reboot
+  EOF
 }
 
 
@@ -587,11 +518,10 @@ resource "aws_instance" "Sonarqube_Server" {
   vpc_security_group_ids      = [aws_security_group.Sonar_SG.id]
   associate_public_ip_address = true
   user_data                   = <<-EOF
-#!/bin/bash
-  sudo apt update -y
-  
-  echo "***Firstly Modify OS Level values***"
 
+  #!/bin/bash
+  sudo apt update -y
+  echo "***Firstly Modify OS Level values***"
   sudo bash -c 'echo "
   vm.max_map_count=262144
   fs.file-max=65536
