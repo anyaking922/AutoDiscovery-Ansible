@@ -16,12 +16,6 @@ pipeline {
           sh "mvn sonar:sonar"
         }
       }
-    }
-    stage('Build Code') {
-      steps {
-        sh 'mvn -B -DskipTests clean package'
-      }
-    }
 
     stage('Build Code') {
       steps {
@@ -35,3 +29,7 @@ pipeline {
         }
       }
     }
+    }
+    }
+  }
+}
