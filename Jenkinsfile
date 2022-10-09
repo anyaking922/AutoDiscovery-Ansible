@@ -6,7 +6,7 @@ pipeline {
   stages {
     stage('Pull Source Code from GitHub') {
       steps {
-        git branch: 'main', credentialsId: 'gitcred', 
+        git branch: 'main', credentialsId: 'Gitcred', 
         url: 'https://github.com/anyaking922/PAC_W_S.git'
       }
     }
@@ -22,19 +22,16 @@ pipeline {
         sh 'mvn -B -DskipTests clean package'
       }
     }
+
+    stage('Build Code') {
+      steps {
+         sh 'mvn package -Dmaven.test.skip' 
+      }
+
     stage('Send Artifacts') {
       steps {
-        sshagent(['ansible-prv-key']) {
-          sh 'scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/pac-project/target/spring-petclinic-2.4.2.war ubuntu@3.252.143.29:/home/ubuntu/Docker'
+        sshagent(['jenkinskey']) {
+          sh 'scp -o StrictHostKeyChecking=no /var/lib/jenkins/petadoptopn/target/spring-petclinic-2.4.2.war ec2-user@3.252.143.29:/opt/docker'
         }
       }
     }
-    stage('Deploy Application') {
-      steps {
-        sshagent(['ansible-prv-key']) {
-          sh 'ssh -o strictHostKeyChecking=no ubuntu@3.252.143.29 "cd /home/ubuntu/Ansible && ansible-playbook playbook-dockerimage.yaml && ansible-playbook playbook-container.yaml && ansible-playbook playbook-newrelic.yaml"'
-        }
-      }
-    }
-  }
-}
