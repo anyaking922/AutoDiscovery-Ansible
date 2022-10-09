@@ -25,14 +25,14 @@ pipeline {
     stage('Send Artifacts') {
       steps {
         sshagent(['ansible-prv-key']) {
-          sh 'scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/pac-project/target/spring-petclinic-2.4.2.war ubuntu@3.252.93.176:/home/ubuntu/Docker'
+          sh 'scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/pac-project/target/spring-petclinic-2.4.2.war ubuntu@3.252.143.29:/home/ubuntu/Docker'
         }
       }
     }
     stage('Deploy Application') {
       steps {
         sshagent(['ansible-prv-key']) {
-          sh 'ssh -o strictHostKeyChecking=no ubuntu@3.252.93.176 "cd /home/ubuntu/Ansible && ansible-playbook playbook-dockerimage.yaml && ansible-playbook playbook-container.yaml && ansible-playbook playbook-newrelic.yaml"'
+          sh 'ssh -o strictHostKeyChecking=no ubuntu@3.252.143.29 "cd /home/ubuntu/Ansible && ansible-playbook playbook-dockerimage.yaml && ansible-playbook playbook-container.yaml && ansible-playbook playbook-newrelic.yaml"'
         }
       }
     }

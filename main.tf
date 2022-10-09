@@ -447,65 +447,134 @@ resource "aws_instance" "PACD_Ansible_Host" {
   key_name                    = aws_key_pair.server_key.id
   associate_public_ip_address = true
   user_data                   = <<-EOF
-  #!/bin/bash
-  sudo apt update -y
+#!/bin/bash
+sudo yum update -y
+sudo yum upgrade -y
+sudo yum install python3.8 -y
+sudo alternatives --set python /usr/bin/python3.8
+sudo yum -y install python3-pip
+sudo yum install ansible -y
+pip3 install ansible --user
+sudo chown ec2-user:ec2-user /etc/ansible
+echo "license_key: eu01xx806409169e75514e699c9629ee0b32NRAL" | sudo tee -a /etc/newrelic-infra.yml
+sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
+sudo yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
+sudo yum install newrelic-infra -y
+echo "PubkeyAcceptedKeyTypes=+ssh-rsa" >> /etc/ssh/sshd_config.d/10-insecure-rsa-keysig.conf
+sudo service sshd reload
+sudo bash -c ' echo "StrictHostKeyChecking No" >> /etc/ssh/ssh_config'
+echo "${file(var.server_priv_key)}" >> /home/ec2-user/.ssh/anskey_rsa
+echo "${file(var.server_key)}" >> /home/ec2-user/.ssh/anskey_rsa.pub
+sudo chmod -R 700 .ssh/
+sudo chown -R ec2-user:ec2-user .ssh/
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install docker-ce -y
+sudo systemctl start docker
+sudo usermod -aG docker ec2-user
+cd /etc
+sudo chown ec2-user:ec2-user hosts
+cat <<EOT>> /etc/ansible/hosts
+localhost ansible_connection=local
+[docker_host]
+${data.aws_instance.PACD_Docker_Host.public_ip}  ansible_ssh_private_key_file=/home/ec2-user/.ssh/anskey_rsa
+EOT
+sudo mkdir /opt/docker
+sudo chown -R ec2-user:ec2-user /opt/docker
+sudo chmod -R 700 /opt/docker
+touch /opt/docker/Dockerfile
+cat <<EOT>> /opt/docker/Dockerfile
+# pull tomcat image from docker hub
+FROM tomcat
+FROM openjdk:8-jre-slim
+#copy war file on the container
+COPY spring-petclinic-2.4.2.war app/
+WORKDIR app/
+RUN pwd
+RUN ls -al
+ENTRYPOINT [ "java", "-jar", "spring-petclinic-2.4.2.war", "--server.port=8085"]
+EOT
+touch /opt/docker/docker-image.yml
+cat <<EOT>> /opt/docker/docker-image.yml
+---
+ - hosts: localhost
+  #root access to user
+   become: true
 
-  echo "*********Install Ansible********"
-  sudo apt install software-properties-common
-  sudo add-apt-repository --yes --update ppa:ansible/ansible
-  sudo apt update -y
-  sudo apt install ansible -y
+   tasks:
+   - name: login to dockerhub
+     command: docker login -u cloudhight -p CloudHight_Admin123@
 
-  echo "****************Copy the private key into the Server **************"
-  echo "****************Ansible would use this when connecting to the Docker Server **************"
-  echo "${file(var.pacpet1_prvkey_path)}" >> ${var.ans_prvkey_path}
+   - name: Create docker image from Pet Adoption war file
+     command: docker build -t pet-adoption-image .
+     args:
+       chdir: /opt/docker
 
-  echo "*********This runs as the root and disables StrictHostChecking********"
-  sudo bash -c 'echo "StrictHostKeyChecking No" >> /etc/ssh/ssh_config'
+   - name: Add tag to image
+     command: docker tag pet-adoption-image cloudhight/pet-adoption-image
 
-  echo "****Add the Docker Servers IP to the host file and also the localhost for ansible*******"
-  sudo bash -c 'echo "localhost ansible_connection=local
-  [Docker_Servers]
-  ${aws_instance.pacpet1_docker.public_ip} ansible_ssh_private_key_file=${var.ans_prvkey_path}" >> /etc/ansible/hosts'
+   - name: Push image to docker hub
+     command: docker push cloudhight/pet-adoption-image
 
-  echo "*********Install Docker engine ********"
-  sudo apt-get install ca-certificates curl gnupg lsb-release -y
-  sudo mkdir -p /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-  sudo apt update -y
-  sudo apt install docker-ce docker-ce-cli -y
+   - name: Remove docker image from Ansible node
+     command: docker rmi pet-adoption-image cloudhight/pet-adoption-image
+     ignore_errors: yes
+EOT
+touch /opt/docker/docker-container.yml
+cat <<EOT>> /opt/docker/docker-container.yml
+---
+ - hosts: docker_host
+   become: true
 
-  echo "*******Create Docker File********"
-  cd /home/ubuntu/
-  mkdir Docker
-  echo "*******We change the owner of this directory to ubuntu because ansible********"
-  echo "*******would need to drop a file in this directory and it cant do that if its owned by root********"
-  sudo chown -R ubuntu:ubuntu Docker
-  touch Docker/Dockerfile
+   tasks:
+   - name: login to dockerhub
+     command: docker login -u cloudhight -p CloudHight_Admin123@
 
-  #Insert Content to Docker File
-  echo "${file(var.docker_file_path)}" > Docker/Dockerfile
+   - name: Stop any container running
+     command: docker stop pet-adoption-container
+     ignore_errors: yes
 
-  #Create Ansible Playbook that creates docker image
-  mkdir Ansible && touch Ansible/playbook-dockerimage.yaml
-  echo "${file(var.docker_image_path)}" > Ansible/playbook-dockerimage.yaml
-  
-  #Create Ansible Playbook that creates docker container
-  touch Ansible/playbook-container.yaml
-  echo "${file(var.docker_container_path)}" > Ansible/playbook-container.yaml
+   - name: Remove stopped container
+     command: docker rm pet-adoption-container
+     ignore_errors: yes
 
-  #Create Ansible Playbook that installs new relic infrastructure agent to monitor containers
-  touch Ansible/playbook-newrelic.yaml
-  echo "${file(var.newrelic_infra_path)}" > Ansible/playbook-newrelic.yaml
+   - name: Remove docker image
+     command: docker rmi cloudhight/pet-adoption-image
+     ignore_errors: yes
 
-  #Install New relic
- curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=NRAK-IWFEY0G9C3Z9US5E18Y3VH0IOJQ NEW_RELIC_ACCOUNT_ID=3643903 NEW_RELIC_REGION=EU /usr/local/bin/newrelic install -y
- 
-  echo "****************Change Hostname(IP) to something readable**************"
-  sudo hostnamectl set-hostname Ansible
-  sudo reboot
-  EOF
+   - name: Pull docker image from dockerhub
+     command: docker pull cloudhight/pet-adoption-image
+     ignore_errors: yes
+
+   - name: Create container from pet adoption image
+     command: docker run -it -d --name pet-adoption-container -p 8080:8085 cloudhight/pet-adoption-image
+     ignore_errors: yes
+EOT
+cat << EOT > /opt/docker/newrelic.yml
+---
+ - hosts: docker
+   become: true
+
+   tasks:
+   - name: install newrelic agent
+     command: docker run \
+                     -d \
+                     --name newrelic-infra \
+                     --network=host \
+                     --cap-add=SYS_PTRACE \
+                     --privileged \
+                     --pid=host \
+                     -v "/:/host:ro" \
+                     -v "/var/run/docker.sock:/var/run/docker.sock" \
+                     -e NRIA_LICENSE_KEY=eu01xx806409169e75514e699c9629ee0b32NRAL \
+                     newrelic/infrastructure:latest
+EOT
+sudo hostnamectl set-hostname Ansible
+EOF
+
+  tags = {
+    Name = "PACD_Ansible_Host"
+  }
 }
 
 
@@ -518,10 +587,11 @@ resource "aws_instance" "Sonarqube_Server" {
   vpc_security_group_ids      = [aws_security_group.Sonar_SG.id]
   associate_public_ip_address = true
   user_data                   = <<-EOF
-
-  #!/bin/bash
+#!/bin/bash
   sudo apt update -y
+  
   echo "***Firstly Modify OS Level values***"
+
   sudo bash -c 'echo "
   vm.max_map_count=262144
   fs.file-max=65536
@@ -578,7 +648,9 @@ resource "aws_instance" "Sonarqube_Server" {
   sonar.jdbc.password=Admin123
   sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
   sonar.search.javaOpts=-Xmx512m -Xms512m -XX:+HeapDumpOnOutOfMemoryError" >> /opt/sonarqube/conf/sonar.properties'
+oot up
   sudo touch /etc/systemd/system/sonarqube.service
+
   #Configuring so that we can run commands to start, stop and reload sonarqube service
   sudo bash -c 'echo "
   [Unit]
@@ -646,8 +718,9 @@ resource "aws_instance" "Sonarqube_Server" {
   sudo systemctl stop nginx.service
   sudo systemctl start nginx.service
   
- #Install New relic
-  curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=NRAK-IWFEY0G9C3Z9US5E18Y3VH0IOJQ NEW_RELIC_ACCOUNT_ID=3643903 NEW_RELIC_REGION=EU /usr/local/bin/newrelic install -y
+  #Install New relic
+  echo "license_key: eu01xx806409169e75514e699c9629ee0b32NRAL" | sudo tee -a /etc/newrelic-infra.yml
+  sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
   echo "****************Change Hostname(IP) to something readable**************"
   sudo hostnamectl set-hostname Sonarqube
   sudo reboot
@@ -663,115 +736,113 @@ resource "aws_ami_from_instance" "PACD_ami" {
 }
 
 
+# ####High Availability, ASG, LB#######
 
 
-####High Availability, ASG, LB#######
+# #Add High Availability
+
+# #Create Target Group
+# resource "aws_lb_target_group" "PACD_tg" {
+#   name     = "PACD-TG"
+#   port     = 8080
+#   protocol = "HTTP"
+#   vpc_id   = aws_vpc.PACD_VPC.id
+#   health_check {
+#     path                = "/"
+#     healthy_threshold   = 2
+#     unhealthy_threshold = 2
+#     timeout             = 5
+#     interval            = 15
+#     matcher             = "200"
+#   }
+# }
 
 
-#Add High Availability
+# #Create Application Load Balancer
+# resource "aws_lb" "PACD_lb" {
+#   name               = "PACD-Lb"
+#   internal           = false
+#   load_balancer_type = "application"
+#   security_groups    = ["${aws_security_group.Jenkins_SG.id}"]
+#   subnets            = ["${aws_subnet.PACD_PubSN1.id}", "${aws_subnet.PACD_PubSN2.id}"]
 
-#Create Target Group
-resource "aws_lb_target_group" "PACD_tg" {
-  name     = "PACD-TG"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.PACD_VPC.id
-  health_check {
-    path                = "/"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    timeout             = 5
-    interval            = 15
-    matcher             = "200"
-  }
-}
+#   enable_deletion_protection = false
 
+#   tags = {
+#     Name = "PACD-Lb"
+#   }
+# }
 
-#Create Application Load Balancer
-resource "aws_lb" "PACD_lb" {
-  name               = "PACD-Lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = ["${aws_security_group.Jenkins_SG.id}"]
-  subnets            = ["${aws_subnet.PACD_PubSN1.id}", "${aws_subnet.PACD_PubSN2.id}"]
+# # Create Load Balancer Listener
+# resource "aws_lb_listener" "pacd_lb" {
+#   load_balancer_arn = aws_lb.PACD_lb.arn
+#   port              = "80"
+#   protocol          = "HTTP"
+#   default_action {
+#     target_group_arn = aws_lb_target_group.PACD_tg.arn
+#     type             = "forward"
+#   }
+# }
 
-  enable_deletion_protection = false
-
-  tags = {
-    Name = "PACD-Lb"
-  }
-}
-
-# Create Load Balancer Listener
-resource "aws_lb_listener" "pacd_lb" {
-  load_balancer_arn = aws_lb.PACD_lb.arn
-  port              = "80"
-  protocol          = "HTTP"
-  default_action {
-    target_group_arn = aws_lb_target_group.PACD_tg.arn
-    type             = "forward"
-  }
-}
-
-#Create Launch Configuration
-resource "aws_launch_configuration" "PACD_lc" {
-  name_prefix                 = "PACD_lc"
-  image_id                    = aws_ami_from_instance.PACD_ami.id
-  instance_type               = "t2.medium"
-  associate_public_ip_address = true
-  security_groups             = ["${aws_security_group.Jenkins_SG.id}"]
-  key_name                    = "server_key"
-  lifecycle {
-    create_before_destroy = true
-  }
-}
+# #Create Launch Configuration
+# resource "aws_launch_configuration" "PACD_lc" {
+#   name_prefix                 = "PACD_lc"
+#   image_id                    = aws_ami_from_instance.PACD_ami.id
+#   instance_type               = "t2.medium"
+#   associate_public_ip_address = true
+#   security_groups             = ["${aws_security_group.Jenkins_SG.id}"]
+#   key_name                    = "server_key"
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+# }
 
 
-#Create Auto Scaling group
-resource "aws_autoscaling_group" "PACD_asg" {
-  name                 = "PACD-ASG"
-  launch_configuration = aws_launch_configuration.PACD_lc.name
-  #Defines the vpc, az and subnets to launch in
-  vpc_zone_identifier       = ["${aws_subnet.PACD_PubSN1.id}", "${aws_subnet.PACD_PubSN2.id}"]
-  target_group_arns         = ["${aws_lb_target_group.PACD_tg.arn}"]
-  health_check_type         = "EC2"
-  health_check_grace_period = 30
-  desired_capacity          = 2
-  max_size                  = 4
-  min_size                  = 2
-  force_delete              = true
-  lifecycle {
-    create_before_destroy = true
-  }
-}
+# #Create Auto Scaling group
+# resource "aws_autoscaling_group" "PACD_asg" {
+#   name                 = "PACD-ASG"
+#   launch_configuration = aws_launch_configuration.PACD_lc.name
+#   #Defines the vpc, az and subnets to launch in
+#   vpc_zone_identifier       = ["${aws_subnet.PACD_PubSN1.id}", "${aws_subnet.PACD_PubSN2.id}"]
+#   target_group_arns         = ["${aws_lb_target_group.PACD_tg.arn}"]
+#   health_check_type         = "EC2"
+#   health_check_grace_period = 30
+#   desired_capacity          = 2
+#   max_size                  = 4
+#   min_size                  = 2
+#   force_delete              = true
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+# }
 
 
 
 
-resource "aws_autoscaling_policy" "PACD_asg_policy" {
-  name                   = "PACD_asg_policy"
-  policy_type            = "TargetTrackingScaling"
-  autoscaling_group_name = aws_autoscaling_group.PACD_asg.name
-  target_tracking_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ASGAverageCPUUtilization"
-    }
-    target_value = 60.0
-  }
-}
+# resource "aws_autoscaling_policy" "PACD_asg_policy" {
+#   name                   = "PACD_asg_policy"
+#   policy_type            = "TargetTrackingScaling"
+#   autoscaling_group_name = aws_autoscaling_group.PACD_asg.name
+#   target_tracking_configuration {
+#     predefined_metric_specification {
+#       predefined_metric_type = "ASGAverageCPUUtilization"
+#     }
+#     target_value = 60.0
+#   }
+# }
 
-#Create Hosted Zone
-resource "aws_route53_zone" "PACD_hosted_zone" {
-  name = "kingsleyA.com"
-}
+# #Create Hosted Zone
+# resource "aws_route53_zone" "PACD_hosted_zone" {
+#   name = "kingsleyA.com"
+# }
 
-resource "aws_route53_record" "PACD_record" {
-  zone_id = aws_route53_zone.PACD_hosted_zone.zone_id
-  name    = ""
-  type    = "A"
-  alias {
-    name                   = aws_lb.PACD_lb.dns_name
-    zone_id                = aws_lb.PACD_lb.zone_id
-    evaluate_target_health = true
-  }
-}
+# resource "aws_route53_record" "PACD_record" {
+#   zone_id = aws_route53_zone.PACD_hosted_zone.zone_id
+#   name    = ""
+#   type    = "A"
+#   alias {
+#     name                   = aws_lb.PACD_lb.dns_name
+#     zone_id                = aws_lb.PACD_lb.zone_id
+#     evaluate_target_health = true
+#   }
+# }
