@@ -274,15 +274,15 @@ resource "aws_security_group" "Sonar_SG" {
 }
 
 # RDS SECURITY GROUP
-resource "aws_security_group" "Mysql_SG" {
-  name        = "Mysql_SG"
+resource "aws_security_group" "Mysql1_SG" {
+  name        = "Mysql1_SG"
   description = "Allow TLS inbound traffic"
   vpc_id      = aws_vpc.PACD_VPC.id
 
   ingress {
     description = "TLS from VPC"
-    from_port   = var.port_mysql_database
-    to_port     = var.port_mysql_database
+    from_port   = var.port_Mysql1_database
+    to_port     = var.port_Mysql1_database
     protocol    = "tcp"
     cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24"]
   }
@@ -304,7 +304,7 @@ resource "aws_security_group" "Mysql_SG" {
   }
 
   tags = {
-    Name = "Mysql_SG"
+    Name = "Mysql1_SG"
   }
 }
 
@@ -315,8 +315,8 @@ resource "aws_key_pair" "server_key" {
 }
 
 #create database subnet group
-resource "aws_db_subnet_group" "pacd_sn_group" {
-  name       = "pacd_sn_group"
+resource "aws_db_subnet_group" "pacd1_sn_group" {
+  name       = "pacd1_sn_group"
   subnet_ids = [aws_subnet.PACD_PvtSN1.id, aws_subnet.PACD_PvtSN2.id]
 
   tags = {
@@ -324,12 +324,12 @@ resource "aws_db_subnet_group" "pacd_sn_group" {
   }
 }
 
-#Create MySQL RDS Instance
+#Create Mysql1 RDS Instance
 resource "aws_db_instance" "pacd_rds" {
   identifier             = "pacd-database"
   storage_type           = "gp2"
   allocated_storage      = 20
-  engine                 = "mysql"
+  engine                 = "Mysql1"
   engine_version         = "8.0"
   instance_class         = "db.t2.micro"
   port                   = "3306"
@@ -337,11 +337,11 @@ resource "aws_db_instance" "pacd_rds" {
   username               = var.database_username
   password               = var.db_password
   multi_az               = true
-  parameter_group_name   = "default.mysql8.0"
+  parameter_group_name   = "default.Mysql18.0"
   deletion_protection    = false
   skip_final_snapshot    = true
-  db_subnet_group_name   = aws_db_subnet_group.pacd_sn_group.name
-  vpc_security_group_ids = [aws_security_group.Mysql_SG.id]
+  db_subnet_group_name   = aws_db_subnet_group.pacd1_sn_group.name
+  vpc_security_group_ids = [aws_security_group.Mysql1_SG.id]
 }
 
 
@@ -626,13 +626,22 @@ resource "aws_instance" "Sonarqube_Server" {
   #Restart postgresql for changes to take effect
   sudo systemctl restart postgresql
 
-  #Install SonarQube
+  # #Install SonarQube
+  # sudo mkdir /sonarqube/
+  # cd /sonarqube/
+  # sudo curl -O https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.6.1.59531.zip
+  # sudo apt install unzip -y
+  # sudo unzip sonarqube-9.6.1.59531.zip -d /opt/
+  # sudo mv /opt/sonarqube-9.6.1.59531/ /opt/sonarqube
+
+#Install SonarQube
   sudo mkdir /sonarqube/
   cd /sonarqube/
-  sudo curl -O https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.6.1.59531.zip
+  sudo curl -O https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-8.6.0.39681.zip
   sudo apt install unzip -y
-  sudo unzip sonarqube-9.6.1.59531.zip -d /opt/
-  sudo mv /opt/sonarqube-9.6.1.59531/ /opt/sonarqube
+  sudo unzip sonarqube*.zip -d /opt
+  sudo mv /opt/sonarqube-8.6.0.39681 /opt/sonarqube
+
 
   #Add group user sonarqube
   sudo groupadd sonar
@@ -846,3 +855,5 @@ resource "aws_ami_from_instance" "PACD_ami" {
 #     evaluate_target_health = true
 #   }
 # }
+
+
