@@ -1,9 +1,5 @@
 pipeline {
   agent any
-  tools {
-  maven 'maven'
-}
-
   stages {
     stage('Pull Source Code from GitHub') {
       steps {
