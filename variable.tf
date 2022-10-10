@@ -14,7 +14,7 @@ variable "server_priv_key" {
   description = "this is the path to my pub key"
 }
 
-variable "port_mysql_database" {
+variable "port_mysql1_database" {
   default = 3306
 }
 
@@ -64,3 +64,6 @@ variable "db_password" {
 }
 
 
+# variable "port_Mysql1_SG" {
+#   default = 3306
+# }

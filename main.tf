@@ -281,8 +281,8 @@ resource "aws_security_group" "Mysql1_SG" {
 
   ingress {
     description = "TLS from VPC"
-    from_port   = var.port_Mysql1_database
-    to_port     = var.port_Mysql1_database
+    from_port   = var.port_mysql1_database
+    to_port     = var.port_mysql1_database
     protocol    = "tcp"
     cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24"]
   }
