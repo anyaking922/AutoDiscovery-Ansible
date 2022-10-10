@@ -1,15 +1,15 @@
 
 output "JenkinsIP" {
-  value = aws_instance.PACD_Jenkins_Host.public_ip
+  value = aws_instance.PETAD1_Jenkins_Host.public_ip
 }
 
 output "DockerIP" {
-  value = aws_instance.PACD_Docker_Host.public_ip
+  value = aws_instance.PETAD1_Docker_Host.public_ip
 }
 
 
 output "AnsibleIP" {
-  value = aws_instance.PACD_Ansible_Host.public_ip
+  value = aws_instance.PETAD1_Ansible_Host.public_ip
 }
 
 output "SonarIP" {

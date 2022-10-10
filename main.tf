@@ -1,141 +1,141 @@
 # VPC
-resource "aws_vpc" "PACD_VPC" {
+resource "aws_vpc" "petad1_VPC" {
   cidr_block = "10.0.0.0/16"
   tags = {
-    Name = "PACD_VPC"
+    Name = "petad1_VPC"
   }
 }
 
 # PUBLIC SUBNET 1
-resource "aws_subnet" "PACD_PubSN1" {
-  vpc_id            = aws_vpc.PACD_VPC.id
+resource "aws_subnet" "petad1_PubSN1" {
+  vpc_id            = aws_vpc.petad1_VPC.id
   cidr_block        = "10.0.1.0/24"
   availability_zone = "eu-west-1a"
 
   tags = {
-    Name = "PACD_PubSN1"
+    Name = "petad1_PubSN1"
   }
 }
 
 # PUBLIC SUBNET 2
-resource "aws_subnet" "PACD_PubSN2" {
-  vpc_id            = aws_vpc.PACD_VPC.id
+resource "aws_subnet" "petad1_PubSN2" {
+  vpc_id            = aws_vpc.petad1_VPC.id
   cidr_block        = "10.0.2.0/24"
   availability_zone = "eu-west-1b"
 
   tags = {
-    Name = "PACD_PubSN2"
+    Name = "petad1_PubSN2"
   }
 }
 
 # PRIVATE SUBNET 1
-resource "aws_subnet" "PACD_PvtSN1" {
-  vpc_id            = aws_vpc.PACD_VPC.id
+resource "aws_subnet" "petad1_PvtSN1" {
+  vpc_id            = aws_vpc.petad1_VPC.id
   cidr_block        = "10.0.3.0/24"
   availability_zone = "eu-west-1a"
 
   tags = {
-    Name = "PACD_PvtSN1"
+    Name = "petad1_PvtSN1"
   }
 }
 
 # PRIVATE SUBNET 2
-resource "aws_subnet" "PACD_PvtSN2" {
-  vpc_id            = aws_vpc.PACD_VPC.id
+resource "aws_subnet" "petad1_PvtSN2" {
+  vpc_id            = aws_vpc.petad1_VPC.id
   cidr_block        = "10.0.4.0/24"
   availability_zone = "eu-west-1b"
 
   tags = {
-    Name = "PACD_PvtSN2"
+    Name = "petad1_PvtSN2"
   }
 }
 
 
 # INTERNET GATEWAY (IGW)
-resource "aws_internet_gateway" "PACD_IGW" {
-  vpc_id = aws_vpc.PACD_VPC.id
+resource "aws_internet_gateway" "petad1_IGW" {
+  vpc_id = aws_vpc.petad1_VPC.id
   tags = {
-    Name = "PACD_IGW"
+    Name = "petad1_IGW"
   }
 }
 
 # NAT GATEWAY
-resource "aws_nat_gateway" "PACD_NAT-GW" {
-  allocation_id = aws_eip.PACD_EIP.id
-  subnet_id     = aws_subnet.PACD_PubSN1.id
+resource "aws_nat_gateway" "petad1_NAT-GW" {
+  allocation_id = aws_eip.petad1_EIP.id
+  subnet_id     = aws_subnet.petad1_PubSN1.id
 
   tags = {
-    Name = "PACD_NAT-GW"
+    Name = "petad1_NAT-GW"
   }
 
-  depends_on = [aws_internet_gateway.PACD_IGW]
+  depends_on = [aws_internet_gateway.petad1_IGW]
 }
 
 # ELASTIC IP
-resource "aws_eip" "PACD_EIP" {
+resource "aws_eip" "petad1_EIP" {
   vpc = true
 
   tags = {
-    Name = "PACD_EIP"
+    Name = "petad1_EIP"
   }
 }
 
 # ROUTE TABLE FOR PUBLIC SUBNET
-resource "aws_route_table" "PACD_RT_Pub" {
-  vpc_id = aws_vpc.PACD_VPC.id
+resource "aws_route_table" "petad1_RT_Pub" {
+  vpc_id = aws_vpc.petad1_VPC.id
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.PACD_IGW.id
+    gateway_id = aws_internet_gateway.petad1_IGW.id
   }
 
   tags = {
-    Name = "PACD_RT_Pub"
+    Name = "petad1_RT_Pub"
   }
 }
 
 # ROUTE TABLE ASSOCIATIONS FOR PUBLIC SUBNET 1
-resource "aws_route_table_association" "PACD_RT_Pub_Ass1" {
-  subnet_id      = aws_subnet.PACD_PubSN1.id
-  route_table_id = aws_route_table.PACD_RT_Pub.id
+resource "aws_route_table_association" "petad1_RT_Pub_Ass1" {
+  subnet_id      = aws_subnet.petad1_PubSN1.id
+  route_table_id = aws_route_table.petad1_RT_Pub.id
 }
 
 # ROUTE TABLE ASSOCIATIONS FOR PUBLIC SUBNET 2
-resource "aws_route_table_association" "PACD_RT_Pub_Ass2" {
-  subnet_id      = aws_subnet.PACD_PubSN2.id
-  route_table_id = aws_route_table.PACD_RT_Pub.id
+resource "aws_route_table_association" "petad1_RT_Pub_Ass2" {
+  subnet_id      = aws_subnet.petad1_PubSN2.id
+  route_table_id = aws_route_table.petad1_RT_Pub.id
 }
 
 
 # ROUTE TABLE FOR PRIVATE SUBNET
-resource "aws_route_table" "PACD_RT_Pvt" {
-  vpc_id = aws_vpc.PACD_VPC.id
+resource "aws_route_table" "petad1_RT_Pvt" {
+  vpc_id = aws_vpc.petad1_VPC.id
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.PACD_NAT-GW.id
+    nat_gateway_id = aws_nat_gateway.petad1_NAT-GW.id
   }
 
   tags = {
-    Name = "PACD_RT_Pvt"
+    Name = "petad1_RT_Pvt"
   }
 }
 
 # ROUTE TABLE ASSOCIATIONS FOR PRIVATE SUBNET 1
-resource "aws_route_table_association" "PACD_RT_Pvt_Ass1" {
-  subnet_id      = aws_subnet.PACD_PvtSN1.id
-  route_table_id = aws_route_table.PACD_RT_Pvt.id
+resource "aws_route_table_association" "petad1_RT_Pvt_Ass1" {
+  subnet_id      = aws_subnet.petad1_PvtSN1.id
+  route_table_id = aws_route_table.petad1_RT_Pvt.id
 }
 
 # ROUTE TABLE ASSOCIATIONS FOR PRIVATE SUBNET 2
-resource "aws_route_table_association" "PACD_RT_Pvt2_Ass2" {
-  subnet_id      = aws_subnet.PACD_PvtSN2.id
-  route_table_id = aws_route_table.PACD_RT_Pvt.id
+resource "aws_route_table_association" "petad1_RT_Pvt2_Ass2" {
+  subnet_id      = aws_subnet.petad1_PvtSN2.id
+  route_table_id = aws_route_table.petad1_RT_Pvt.id
 }
 
 # JENKINS SECURITY GROUP
 resource "aws_security_group" "Jenkins_SG" {
   name        = "Jenkins_SG"
   description = "Allow 8080, ssh traffic"
-  vpc_id      = aws_vpc.PACD_VPC.id
+  vpc_id      = aws_vpc.petad1_VPC.id
 
   ingress {
     description = "TLS from VPC"
@@ -177,7 +177,7 @@ resource "aws_security_group" "Jenkins_SG" {
 resource "aws_security_group" "Docker_SG" {
   name        = "Docker_SG"
   description = "Allow 8080, ssh traffic"
-  vpc_id      = aws_vpc.PACD_VPC.id
+  vpc_id      = aws_vpc.petad1_VPC.id
 
   ingress {
     description = "TLS from VPC"
@@ -219,7 +219,7 @@ resource "aws_security_group" "Docker_SG" {
 resource "aws_security_group" "Ansible_SG" {
   name        = "Ansible_SG"
   description = "Allow TLS inbound traffic"
-  vpc_id      = aws_vpc.PACD_VPC.id
+  vpc_id      = aws_vpc.petad1_VPC.id
 
 
   ingress {
@@ -246,7 +246,7 @@ resource "aws_security_group" "Ansible_SG" {
 resource "aws_security_group" "Sonar_SG" {
   name        = "sonar_sg"
   description = "Allow inbound traffic"
-  vpc_id      = aws_vpc.PACD_VPC.id
+  vpc_id      = aws_vpc.petad1_VPC.id
   ingress {
     description = "TLS from VPC"
     from_port   = var.sonar_port
@@ -277,7 +277,7 @@ resource "aws_security_group" "Sonar_SG" {
 resource "aws_security_group" "Mysql1_SG" {
   name        = "Mysql1_SG"
   description = "Allow TLS inbound traffic"
-  vpc_id      = aws_vpc.PACD_VPC.id
+  vpc_id      = aws_vpc.petad1_VPC.id
 
   ingress {
     description = "TLS from VPC"
@@ -315,9 +315,9 @@ resource "aws_key_pair" "server_key" {
 }
 
 #create database subnet group
-resource "aws_db_subnet_group" "pacd1_sn_group" {
-  name       = "pacd1_sn_group"
-  subnet_ids = [aws_subnet.PACD_PvtSN1.id, aws_subnet.PACD_PvtSN2.id]
+resource "aws_db_subnet_group" "petad11_sn_group" {
+  name       = "petad11_sn_group"
+  subnet_ids = [aws_subnet.petad1_PvtSN1.id, aws_subnet.petad1_PvtSN2.id]
 
   tags = {
     Name = "pacpd_sn_group"
@@ -325,31 +325,31 @@ resource "aws_db_subnet_group" "pacd1_sn_group" {
 }
 
 #Create Mysql1 RDS Instance
-resource "aws_db_instance" "pacd_rds" {
-  identifier             = "pacd-database"
+resource "aws_db_instance" "pacpd1_rds" {
+  identifier             = "petad11-database"
   storage_type           = "gp2"
   allocated_storage      = 20
   engine                 = "Mysql1"
   engine_version         = "8.0"
   instance_class         = "db.t2.micro"
   port                   = "3306"
-  db_name                = "pacdb"
+  db_name                = "petad1b"
   username               = var.database_username
   password               = var.db_password
   multi_az               = true
   parameter_group_name   = "default.Mysql18.0"
   deletion_protection    = false
   skip_final_snapshot    = true
-  db_subnet_group_name   = aws_db_subnet_group.pacd1_sn_group.name
+  db_subnet_group_name   = aws_db_subnet_group.petad11_sn_group.name
   vpc_security_group_ids = [aws_security_group.Mysql1_SG.id]
 }
 
 
 # JENKINS SERVER
-resource "aws_instance" "PACD_Jenkins_Host" {
+resource "aws_instance" "PETAD1_Jenkins_Host" {
   ami                         = var.ami
   instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.PACD_PubSN1.id
+  subnet_id                   = aws_subnet.petad1_PubSN1.id
   vpc_security_group_ids      = [aws_security_group.Jenkins_SG.id]
   key_name                    = aws_key_pair.server_key.id
   associate_public_ip_address = true
@@ -380,7 +380,7 @@ sudo service sshd restart
 sudo hostnamectl set-hostname Jenkins
 EOF
   tags = {
-    Name = "PACD_Jenkins_Host"
+    Name = "petad1_Jenkins_Host"
   }
 }
 
@@ -389,10 +389,10 @@ EOF
 
 
 # DOCKER SERVER
-resource "aws_instance" "PACD_Docker_Host" {
+resource "aws_instance" "PETAD1_Docker_Host" {
   ami                         = var.ami
   instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.PACD_PubSN1.id
+  subnet_id                   = aws_subnet.petad1_PubSN1.id
   vpc_security_group_ids      = [aws_security_group.Docker_SG.id]
   key_name                    = aws_key_pair.server_key.id
   associate_public_ip_address = true
@@ -419,30 +419,29 @@ sudo chmod 600 .ssh/authorized_keys
 echo "${file(var.server_key)}" >> /home/ec2-user/.ssh/authorized_keys 
 sudo hostnamectl set-hostname Docker
 EOF
-  tags = {
-    Name = "PACD_Docker_Host"
+ tags = {
+    Name = "petad1_Docker_Host"
   }
 }
-data "aws_instance" "PACD_Docker_Host" {
-  filter {
-    name   = "tag:Name"
-    values = ["PACD_Docker_Host"]
-  }
-  depends_on = [
-    aws_instance.PACD_Docker_Host
-  ]
+data "aws_instance" "petad1_Docker_Host" {
+   filter {
+       name = "tag:Name"
+       values =["petad1_Docker_Host"]
+   }
+   depends_on = [
+       aws_instance.PETAD1_Docker_Host
+   ]
 }
-
 
 
 
 
 
 #Create Ansible Host
-resource "aws_instance" "PACD_Ansible_Host" {
+resource "aws_instance" "PETAD1_Ansible_Host" {
   ami                         = var.ami
   instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.PACD_PubSN1.id
+  subnet_id                   = aws_subnet.petad1_PubSN1.id
   vpc_security_group_ids      = [aws_security_group.Ansible_SG.id]
   key_name                    = aws_key_pair.server_key.id
   associate_public_ip_address = true
@@ -477,7 +476,7 @@ sudo chown ec2-user:ec2-user hosts
 cat <<EOT>> /etc/ansible/hosts
 localhost ansible_connection=local
 [docker_host]
-${data.aws_instance.PACD_Docker_Host.public_ip}  ansible_ssh_private_key_file=/home/ec2-user/.ssh/anskey_rsa
+${data.aws_instance.petad1_Docker_Host.public_ip}  ansible_ssh_private_key_file=/home/ec2-user/.ssh/anskey_rsa
 EOT
 sudo mkdir /opt/docker
 sudo chown -R ec2-user:ec2-user /opt/docker
@@ -573,7 +572,7 @@ sudo hostnamectl set-hostname Ansible
 EOF
 
   tags = {
-    Name = "PACD_Ansible_Host"
+    Name = "petad1_Ansible_Host"
   }
 }
 
@@ -583,7 +582,7 @@ resource "aws_instance" "Sonarqube_Server" {
   ami                         = var.sonar_ami
   instance_type               = var.instance_type
   key_name                    = aws_key_pair.server_key.id
-  subnet_id                   = aws_subnet.PACD_PubSN1.id
+  subnet_id                   = aws_subnet.petad1_PubSN1.id
   vpc_security_group_ids      = [aws_security_group.Sonar_SG.id]
   associate_public_ip_address = true
   user_data                   = <<-EOF
@@ -739,9 +738,9 @@ oot up
 
 
 #Create AMI from EC2 Instance
-resource "aws_ami_from_instance" "PACD_ami" {
-  name               = "PACD_ami"
-  source_instance_id = aws_instance.PACD_Docker_Host.id
+resource "aws_ami_from_instance" "petad1_ami" {
+  name               = "petad1_ami"
+  source_instance_id = aws_instance.PETAD1_Ansible_Host.id
 }
 
 
@@ -751,11 +750,11 @@ resource "aws_ami_from_instance" "PACD_ami" {
 # #Add High Availability
 
 # #Create Target Group
-# resource "aws_lb_target_group" "PACD_tg" {
-#   name     = "PACD-TG"
+# resource "aws_lb_target_group" "petad1_tg" {
+#   name     = "petad1-TG"
 #   port     = 8080
 #   protocol = "HTTP"
-#   vpc_id   = aws_vpc.PACD_VPC.id
+#   vpc_id   = aws_vpc.petad1_VPC.id
 #   health_check {
 #     path                = "/"
 #     healthy_threshold   = 2
@@ -768,35 +767,35 @@ resource "aws_ami_from_instance" "PACD_ami" {
 
 
 # #Create Application Load Balancer
-# resource "aws_lb" "PACD_lb" {
-#   name               = "PACD-Lb"
+# resource "aws_lb" "petad1_lb" {
+#   name               = "petad1-Lb"
 #   internal           = false
 #   load_balancer_type = "application"
 #   security_groups    = ["${aws_security_group.Jenkins_SG.id}"]
-#   subnets            = ["${aws_subnet.PACD_PubSN1.id}", "${aws_subnet.PACD_PubSN2.id}"]
+#   subnets            = ["${aws_subnet.petad1_PubSN1.id}", "${aws_subnet.petad1_PubSN2.id}"]
 
 #   enable_deletion_protection = false
 
 #   tags = {
-#     Name = "PACD-Lb"
+#     Name = "petad1-Lb"
 #   }
 # }
 
 # # Create Load Balancer Listener
-# resource "aws_lb_listener" "pacd_lb" {
-#   load_balancer_arn = aws_lb.PACD_lb.arn
+# resource "aws_lb_listener" "petad1_lb" {
+#   load_balancer_arn = aws_lb.petad1_lb.arn
 #   port              = "80"
 #   protocol          = "HTTP"
 #   default_action {
-#     target_group_arn = aws_lb_target_group.PACD_tg.arn
+#     target_group_arn = aws_lb_target_group.petad1_tg.arn
 #     type             = "forward"
 #   }
 # }
 
 # #Create Launch Configuration
-# resource "aws_launch_configuration" "PACD_lc" {
-#   name_prefix                 = "PACD_lc"
-#   image_id                    = aws_ami_from_instance.PACD_ami.id
+# resource "aws_launch_configuration" "petad1_lc" {
+#   name_prefix                 = "petad1_lc"
+#   image_id                    = aws_ami_from_instance.petad1_ami.id
 #   instance_type               = "t2.medium"
 #   associate_public_ip_address = true
 #   security_groups             = ["${aws_security_group.Jenkins_SG.id}"]
@@ -808,12 +807,12 @@ resource "aws_ami_from_instance" "PACD_ami" {
 
 
 # #Create Auto Scaling group
-# resource "aws_autoscaling_group" "PACD_asg" {
-#   name                 = "PACD-ASG"
-#   launch_configuration = aws_launch_configuration.PACD_lc.name
+# resource "aws_autoscaling_group" "petad1_asg" {
+#   name                 = "petad1-ASG"
+#   launch_configuration = aws_launch_configuration.petad1_lc.name
 #   #Defines the vpc, az and subnets to launch in
-#   vpc_zone_identifier       = ["${aws_subnet.PACD_PubSN1.id}", "${aws_subnet.PACD_PubSN2.id}"]
-#   target_group_arns         = ["${aws_lb_target_group.PACD_tg.arn}"]
+#   vpc_zone_identifier       = ["${aws_subnet.petad1_PubSN1.id}", "${aws_subnet.petad1_PubSN2.id}"]
+#   target_group_arns         = ["${aws_lb_target_group.petad1_tg.arn}"]
 #   health_check_type         = "EC2"
 #   health_check_grace_period = 30
 #   desired_capacity          = 2
@@ -828,10 +827,10 @@ resource "aws_ami_from_instance" "PACD_ami" {
 
 
 
-# resource "aws_autoscaling_policy" "PACD_asg_policy" {
-#   name                   = "PACD_asg_policy"
+# resource "aws_autoscaling_policy" "petad1_asg_policy" {
+#   name                   = "petad1_asg_policy"
 #   policy_type            = "TargetTrackingScaling"
-#   autoscaling_group_name = aws_autoscaling_group.PACD_asg.name
+#   autoscaling_group_name = aws_autoscaling_group.petad1_asg.name
 #   target_tracking_configuration {
 #     predefined_metric_specification {
 #       predefined_metric_type = "ASGAverageCPUUtilization"
@@ -841,17 +840,17 @@ resource "aws_ami_from_instance" "PACD_ami" {
 # }
 
 # #Create Hosted Zone
-# resource "aws_route53_zone" "PACD_hosted_zone" {
+# resource "aws_route53_zone" "petad1_hosted_zone" {
 #   name = "kingsleyA.com"
 # }
 
-# resource "aws_route53_record" "PACD_record" {
-#   zone_id = aws_route53_zone.PACD_hosted_zone.zone_id
+# resource "aws_route53_record" "petad1_record" {
+#   zone_id = aws_route53_zone.petad1_hosted_zone.zone_id
 #   name    = ""
 #   type    = "A"
 #   alias {
-#     name                   = aws_lb.PACD_lb.dns_name
-#     zone_id                = aws_lb.PACD_lb.zone_id
+#     name                   = aws_lb.petad1_lb.dns_name
+#     zone_id                = aws_lb.petad1_lb.zone_id
 #     evaluate_target_health = true
 #   }
 # }
