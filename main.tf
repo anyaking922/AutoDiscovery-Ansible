@@ -324,25 +324,25 @@ resource "aws_db_subnet_group" "petad11_sn_group" {
   }
 }
 
-#Create Mysql1 RDS Instance
-resource "aws_db_instance" "pacpd1_rds" {
-  identifier             = "petad11-database"
-  storage_type           = "gp2"
-  allocated_storage      = 20
-  engine                 = "Mysql1"
-  engine_version         = "8.0"
-  instance_class         = "db.t2.micro"
-  port                   = "3306"
-  db_name                = "petad1b"
-  username               = var.database_username
-  password               = var.db_password
-  multi_az               = true
-  parameter_group_name   = "default.Mysql18.0"
-  deletion_protection    = false
-  skip_final_snapshot    = true
-  db_subnet_group_name   = aws_db_subnet_group.petad11_sn_group.name
-  vpc_security_group_ids = [aws_security_group.Mysql1_SG.id]
-}
+# #Create Mysql1 RDS Instance
+# resource "aws_db_instance" "Mysql1_rds" {
+#   identifier             = "mysql1-database"
+#   storage_type           = "gp2"
+#   allocated_storage      = 20
+#   engine                 = "Mysql1"
+#   engine_version         = "8.0"
+#   instance_class         = "db.t2.micro"
+#   port                   = "3306"
+#   db_name                = "petad1b"
+#   username               = var.database_username
+#   password               = var.db_password
+#   multi_az               = true
+#   parameter_group_name   = "default.Mysql18.0"
+#   deletion_protection    = false
+#   skip_final_snapshot    = true
+#   db_subnet_group_name   = aws_db_subnet_group.petad11_sn_group.name
+#   vpc_security_group_ids = [aws_security_group.Mysql1_SG.id]
+# }
 
 
 # JENKINS SERVER
@@ -476,7 +476,7 @@ sudo chown ec2-user:ec2-user hosts
 cat <<EOT>> /etc/ansible/hosts
 localhost ansible_connection=local
 [docker_host]
-${data.aws_instance.petad1_Docker_Host.public_ip}  ansible_ssh_private_key_file=/home/ec2-user/.ssh/anskey_rsa
+${aws_instance.PETAD1_Docker_Host.public_ip}  ansible_ssh_private_key_file=/home/ec2-user/.ssh/anskey_rsa
 EOT
 sudo mkdir /opt/docker
 sudo chown -R ec2-user:ec2-user /opt/docker
