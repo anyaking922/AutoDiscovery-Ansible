@@ -420,13 +420,13 @@ echo "${file(var.server_key)}" >> /home/ec2-user/.ssh/authorized_keys
 sudo hostnamectl set-hostname Docker
 EOF
  tags = {
-    Name = "petad1_Docker_Host"
+    Name = "PETAD1_Docker_Host"
   }
 }
-data "aws_instance" "petad1_Docker_Host" {
+data "aws_instance" "PETAD1_Docker_Host" {
    filter {
        name = "tag:Name"
-       values =["petad1_Docker_Host"]
+       values =["PETAD1_Docker_Host"]
    }
    depends_on = [
        aws_instance.PETAD1_Docker_Host
