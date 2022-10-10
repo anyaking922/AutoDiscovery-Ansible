@@ -1,10 +1,13 @@
 pipeline {
   agent any
+  tools {
+  maven 'maven'
+}
   stages {
-    stage('Pull Source Code from GitHub') {
-      steps {
-        git branch: 'main',
-          credentialsId: 'GitCred',
+      stage('Pull Source Code from GitHub') {
+          steps {
+              git branch: 'main',
+              credentialsId: 'GitCred',
           url: 'https://github.com/anyaking922/PAC_W_S'
       }
     }
