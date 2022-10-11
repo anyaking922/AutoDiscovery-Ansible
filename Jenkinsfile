@@ -21,7 +21,7 @@ pipeline {
     }
     stage('Build Code') {
       steps {
-        sh 'mvn -B -DskipTests clean package'
+        sh 'mvn package -Dmaven.test.skip'
       }
     }
     stage('Send Artifacts') {
