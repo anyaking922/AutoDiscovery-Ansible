@@ -1,4 +1,4 @@
-resource "aws_instance" "PACJAD_ansible_node" {
+resource "aws_instance" "PACD_ansible_node" {
   ami           = var.ami_name
   instance_type = var.instance_type
   key_name = var.key-id

@@ -22,7 +22,7 @@ variable "mysql" {
     default = 3306
 }
 variable "vpc_id" {
-    default = "aws_vpc.PACJAD_VPC.id"
+    default = "aws_vpc.PACD_VPC.id"
 }
 
 variable "my_system" {

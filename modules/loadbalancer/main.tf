@@ -1,8 +1,8 @@
 # Create a jenkins load balancer
 resource "aws_elb" "jenkins_lb" {
   name            = var.elb_name
-  subnets         = var.subnet-id   #[aws_subnet.PACJAD_PUB_SN1.id]
-  security_groups = var.jenkins-sg1 #[aws_security_group.PACJAD_SG1.id]
+  subnets         = var.subnet-id   #[aws_subnet.PACD_PUB_SN1.id]
+  security_groups = var.jenkins-sg1 #[aws_security_group.PACD_SG1.id]
 
   listener {
     instance_port     = 8080
@@ -19,7 +19,7 @@ resource "aws_elb" "jenkins_lb" {
     interval            = 30
   }
 
-  instances                   = var.jenkins-instance #[aws_instance.PACJAD_jenkins.id]
+  instances                   = var.jenkins-instance #[aws_instance.PACD_jenkins.id]
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
@@ -46,7 +46,7 @@ resource "aws_lb_target_group" "docker-tg" {
     unhealthy_threshold = 3
   }
 }
-resource "aws_lb_target_group_attachment" "PACJADT1-tg-att" {
+resource "aws_lb_target_group_attachment" "PACDT1-tg-att" {
   target_group_arn = aws_lb_target_group.docker-tg.arn
   target_id        = var.docker_instance
   port             = 80
@@ -64,7 +64,7 @@ resource "aws_lb" "docker-alb" {
   }
 }
 #Add a load balancer Listener
-resource "aws_lb_listener" "PACJADT1-lb-listener" {
+resource "aws_lb_listener" "PACDT1-lb-listener" {
   load_balancer_arn = aws_lb.docker-alb.arn
   port              = "80"
   protocol          = "HTTP"

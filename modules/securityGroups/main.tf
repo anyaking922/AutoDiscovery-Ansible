@@ -1,11 +1,11 @@
 # Create Jenkins and Docker_host Security Group
-resource "aws_security_group" "PACJAD_SG1" {
+resource "aws_security_group" "PACD_SG1" {
   name        = var.sg1_name
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc-id
 
   ingress {
-    description = "SSH from PACJAD_VPC"
+    description = "SSH from PACD_VPC"
     from_port   = var.ssh_port
     to_port     = var.ssh_port
     protocol    = "tcp"
@@ -13,7 +13,7 @@ resource "aws_security_group" "PACJAD_SG1" {
   }
 
   ingress {
-    description = "Allow custom_http from PACJAD_VPC"
+    description = "Allow custom_http from PACD_VPC"
     from_port   = var.Custom_http
     to_port     = var.Custom_http
     protocol    = "tcp"
@@ -21,7 +21,7 @@ resource "aws_security_group" "PACJAD_SG1" {
   }
 
   ingress {
-    description = "Allow http from PACJAD_VPC"
+    description = "Allow http from PACD_VPC"
     from_port   = var.http_port
     to_port     = var.http_port
     protocol    = "tcp"
@@ -40,13 +40,13 @@ resource "aws_security_group" "PACJAD_SG1" {
 }
 
 # Create Bastion_host and Ansible_node Security Group
-resource "aws_security_group" "PACJAD_SG2" {
+resource "aws_security_group" "PACD_SG2" {
   name        = var.sg2_name
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc-id
 
   ingress {
-    description = "SSH from PACJAD_VPC"
+    description = "SSH from PACD_VPC"
     from_port   = var.ssh_port
     to_port     = var.ssh_port
     protocol    = "tcp"
@@ -65,13 +65,13 @@ resource "aws_security_group" "PACJAD_SG2" {
 }
 
 # Create  Security Group
-resource "aws_security_group" "PACJAD_SG3" {
+resource "aws_security_group" "PACD_SG3" {
   name        = var.sg3_name
   description = "Allow TLS inbound traffic"
   vpc_id      = var.vpc-id
 
   ingress {
-    description = "SSH from PACJAD_VPC"
+    description = "SSH from PACD_VPC"
     from_port   = var.mysql
     to_port     = var.mysql
     protocol    = "tcp"

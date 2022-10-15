@@ -1,4 +1,4 @@
-module "staging-vpc-team-1" {
+module "staging-vpc" {
   source = "../../Modules/vpc"
-  vpc_name = "staging-PACJAD-team-1"
+  vpc_name = "staging-PACD"
 }

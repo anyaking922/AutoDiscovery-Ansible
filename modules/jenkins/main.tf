@@ -1,10 +1,10 @@
 #Create a Jenkins Server
-resource "aws_instance" "PACJAD_jenkins" {
+resource "aws_instance" "PACD_jenkins" {
     ami = var.ami_name
     instance_type = var.instance_type
     subnet_id = var.subnet-id
     key_name = var.key-id
-    vpc_security_group_ids  = var.vpc-sg1 #[aws_security_group.PACJAD_SG1.id]
+    vpc_security_group_ids  = var.vpc-sg1 #[aws_security_group.PACD_SG1.id]
     user_data = <<-EOF
     #!/bin/bash
     exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1

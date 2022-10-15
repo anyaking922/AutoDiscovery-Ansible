@@ -1,4 +1,4 @@
-module "prod-vpc-team-1" {
+module "prod-vpc" {
   source = "../../Modules/vpc"
-  vpc_name = "prod-PACJAD-team-1"
+  vpc_name = "prod-PACD"
 }
