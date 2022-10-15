@@ -1,6 +1,0 @@
-.terraform*
-terraform.*
-provider.tf 
-key*
-server_key*
-server_priv*
